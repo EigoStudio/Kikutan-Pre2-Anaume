@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>準2級 Day 59 穴埋め問題</title>
+  <script src="auth.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* =========================================
+       【ブラウザ版】基本設定
+       ========================================= */
+    :root { --primary: #4a90e2; --secondary: #d81b60; --accent: #d0021b; --bg: #f0f4f8; --success: #34c759; --selected: #ffcc00; --target: #dcfce7; }
+    html, body { margin: 0; padding: 0; background: var(--bg); font-family: 'Nunito', 'Kosugi Maru', sans-serif; }
+    
+    .container { width: 210mm; margin: 20px auto; background: white; padding: 10mm 15mm; display: flex; flex-direction: column; box-shadow: 0 0 10px rgba(0,0,0,0.1); box-sizing: border-box; }
+    .header { display: flex; justify-content: flex-end; border-bottom: 2px solid var(--primary); margin-bottom: 15px; }
+    .header h1 { font-size: 18px; color: var(--primary); font-weight: 700; margin: 0; }
+    
+    .instruction { font-size: 13px; font-weight: bold; color: #444; margin: 10px 0 20px 0; padding-left: 10px; border-left: 4px solid var(--primary); }
+    
+    #exercise-content { display: flex; flex-direction: column; gap: 30px; }
+    .question-block { display: flex; flex-direction: column; gap: 10px; }
+    
+    .bank-container { display: flex; gap: 12px; flex-wrap: wrap; }
+    /* ワードバンクA */
+    .word-bank { 
+      font-weight: bold; font-size: 14px; color: var(--primary); 
+      background: #eef6ff; border: 1px solid var(--primary); 
+      padding: 6px 12px; border-radius: 4px; 
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    }
+    /* ワードバンクB */
+    .word-bank-secondary { 
+      font-weight: bold; font-size: 14px; color: var(--secondary); 
+      background: #fce4ec; border: 1px solid var(--secondary); 
+      padding: 6px 12px; border-radius: 4px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    }
+
+    .draggable-word {
+      cursor: pointer; padding: 2px 6px; border-radius: 4px;
+      transition: all 0.2s; border: 1px solid transparent;
+      user-select: none; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .draggable-word:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+    .draggable-word.selected { border: 2px solid #ffcc00; background: #fffbe6; transform: scale(1.05); }
+    .draggable-word.used { opacity: 0.3; text-decoration: line-through; pointer-events: none; background: #eee; box-shadow: none; }
+
+    .sentence-list { display: flex; flex-direction: column; gap: 12px; }
+    .sentence { font-size: 15.5px; line-height: 1.5; color: #333; position: relative; }
+    
+    .blank { 
+      display: inline-block; min-width: 70px; border-bottom: 1.5px solid #333; 
+      text-align: center; font-weight: bold; color: var(--accent); 
+      margin: 0 4px; padding: 2px 4px; cursor: pointer; transition: background 0.2s;
+      vertical-align: bottom; height: 1.4em;
+    }
+    
+    body.is-selecting .blank { background: var(--target); border-bottom: 2px dashed var(--success); animation: pulse 1.5s infinite; }
+    body.is-selecting .blank.filled { background: #fff3cd; border-bottom: 1.5px solid #ffcc00; animation: none; opacity: 1; }
+    
+    .blank.filled[data-type="B"] { color: var(--secondary); }
+    .blank.filled[data-type="A"] { color: var(--primary); }
+
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
+
+    .controls { position: fixed; top: 15px; left: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
+    button { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+    /* =========================================
+       【PDF印刷用】A4完結
+       ========================================= */
+    @media print {
+      @page { size: A4; margin: 12mm 15mm 15mm 15mm; }
+      body { background: white; -webkit-print-color-adjust: exact; }
+      body.is-selecting .blank { background: none !important; border-bottom: 1.5px solid #000 !important; animation: none !important; }
+      
+      .browser-only { display: none !important; }
+
+      .controls { display: none !important; }
+      .container { width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; display: block !important; }
+      .header { border-bottom: 1.5px solid #000; margin-bottom: 6mm; }
+      .header h1 { color: #000 !important; font-size: 18px !important; }
+      .instruction { border-left: 3px solid #000 !important; font-size: 12.5px !important; color: #000 !important; margin-bottom: 8mm !important; }
+      #exercise-content { gap: 6mm !important; }
+      .question-block { page-break-inside: avoid; break-inside: avoid; margin-bottom: 2mm !important; }
+      .bank-container { margin-bottom: 3mm !important; }
+      
+      .word-bank, .word-bank-secondary { 
+        background: none !important; border: 1.5px solid #000 !important; 
+        color: #000 !important; font-size: 16px !important; 
+        padding: 2px 8px !important; display: block !important;
+      }
+      .draggable-word {
+        display: inline !important; border: none !important; background: none !important; box-shadow: none !important;
+        padding: 0 !important; color: inherit !important; cursor: default !important; opacity: 1 !important; text-decoration: none !important; pointer-events: none !important;
+      }
+      .draggable-word::after { content: " / "; }
+      .draggable-word:last-child::after { content: ""; }
+
+      .sentence { font-size: 17.5px !important; line-height: 1.6 !important; color: #000 !important; margin-bottom: 1mm !important; }
+      .blank { color: #000 !important; border-color: #000 !important; min-width: 80px !important; background: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="generate()">問題をシャッフル</button>
+    <button onclick="checkAnswers()" style="background: #ff9500;">答え合わせ</button>
+    <button onclick="window.print()" style="background: var(--success);">PDF保存 / 印刷</button>
+  </div>
+  <div class="container">
+    <div class="header"><h1>準2級 Day 59 穴埋め問題</h1></div>
+    <div class="instruction">
+      ★ Fill in the blanks with the correct words. 
+      <span class="browser-only"><br>(Select word → Tap to fill blank)</span>
+    </div>
+    <div id="exercise-content"></div>
+  </div>
+  <script>
+    // Day 59（英検準2級大問1風：ユーモアも交えた16問題）
+    // Day 59（修正版 masterData）
+  const masterData = [ 
+    { ans: ["had", "better"], raw: ["had", "better"], text: "You [B] [B] apologize to Mom right now, or she won't leave any birthday cake for you." }, 
+    { ans: ["make", "mistake"], raw: ["make", "mistake"], text: "Be careful not to [B] a big [B] like wearing your shirt inside out again!" }, 
+    { ans: ["have", "trouble"], raw: ["have", "trouble"], text: "I always [B] [B] waking up early, so my alarm clock has to ring five times." }, 
+    { ans: ["do", "best"], raw: ["do", "best"], text: "Even if you are nervous, just [B] your [B] during the English speech presentation." }, 
+    { ans: ["take", "place"], raw: ["take", "place"], text: "The grand fireworks show will [B] [B] at the river park tomorrow evening." }, 
+    { ans: ["take", "care"], raw: ["take", "care"], text: "While my aunt is away on vacation, I have to [B] [B] of her lazy cat." }, 
+    { ans: ["came", "true"], raw: ["came", "true"], text: "Ken's dream to win the marathon finally [B] [B] after three years of training." }, 
+    { ans: ["spend", "playing"], raw: ["spend", "playing"], text: "If you [B] all weekend [B] video games, you won't pass Monday's math quiz." }, 
+    { ans: ["do", "well"], raw: ["do", "well"], text: "She worked very hard in history class, so she managed to [B] [B] on the final exam." }, 
+    { ans: ["used", "to"], raw: ["used", "to"], text: "My grandpa [B] [B] have thick black hair, but now he is completely bald!" }, 
+    { ans: ["take", "look"], raw: ["take", "look"], text: "Please [B] a [B] at this strange photo—my dog is wearing giant sunglasses!" }, 
+    { ans: ["take", "part"], raw: ["take", "part"], text: "Over one hundred brave citizens decided to [B] [B] in the town singing competition." }, 
+    { ans: ["make", "sure"], raw: ["make", "sure"], text: "Before you step out of the house, [B] [B] you are actually wearing matching shoes." }, 
+    { ans: ["make", "friends"], raw: ["make", "friends"], text: "It is usually easy for friendly children to [B] [B] with others at summer camp." }, 
+    { ans: ["get", "married"], raw: ["get", "married"], text: "The young couple decided to [B] [B] in a small church surrounded by close friends." }, 
+    { ans: ["go", "shopping"], raw: ["go", "shopping"], text: "My sister and I plan to [B] [B] at the new mall to buy some autumn clothes." } 
+  ];
+
+    let selectedElement = null;
+    let wordIdCounter = 0;
+
+    function generate() { 
+      const content = document.getElementById('exercise-content'); 
+      content.innerHTML = ''; 
+      wordIdCounter = 0;
+      
+      let shuffled = [...masterData].sort(() => Math.random() - 0.5); 
+      clearSelection();
+
+      for (let i = 0; i < 4; i++) { 
+        const block = document.createElement('div'); 
+        block.className = 'question-block'; 
+        
+        const currentFour = shuffled.slice(i * 4, (i + 1) * 4); 
+        const displaySentences = [...currentFour].sort(() => Math.random() - 0.5);
+
+        // --- Bank A ---
+        const bankAItems = currentFour.map(item => ({ raw: item.raw[0], correct: item.ans[0] })).sort(() => Math.random() - 0.5);
+        const divA = document.createElement('div'); 
+        divA.className = 'word-bank'; 
+        const prefixA = document.createElement('span');
+        prefixA.textContent = (i + 1) + '-A) ';
+        divA.appendChild(prefixA);
+        
+        bankAItems.forEach(obj => {
+          const span = createDraggable(obj.raw, obj.correct, 'A');
+          divA.appendChild(span);
+        });
+
+        // --- Bank B ---
+        const bankBItems = currentFour.map(item => ({ raw: item.raw[1], correct: item.ans[1] })).sort(() => Math.random() - 0.5);
+        const divB = document.createElement('div'); 
+        divB.className = 'word-bank-secondary'; 
+        const prefixB = document.createElement('span');
+        prefixB.textContent = (i + 1) + '-B) ';
+        divB.appendChild(prefixB);
+
+        bankBItems.forEach(obj => {
+          const span = createDraggable(obj.raw, obj.raw, 'B');
+          divB.appendChild(span);
+        });
+
+        const bankContainer = document.createElement('div'); 
+        bankContainer.className = 'bank-container'; 
+        bankContainer.appendChild(divA); 
+        bankContainer.appendChild(divB); 
+        block.appendChild(bankContainer); 
+
+        // --- Sentence List ---
+        const list = document.createElement('div'); 
+        list.className = 'sentence-list'; 
+        
+        displaySentences.forEach(item => { 
+          const div = document.createElement('div'); 
+          div.className = 'sentence'; 
+          
+          let htmlText = item.text;
+          htmlText = htmlText.replace('[B]', `<span class='blank blank-a' data-type='A' data-ans='${item.ans[0]}'></span>`);
+          htmlText = htmlText.replace('[B]', `<span class='blank blank-b' data-type='B' data-ans='${item.ans[1]}'></span>`);
+          
+          div.innerHTML = htmlText; 
+          
+          div.querySelectorAll('.blank').forEach(blank => {
+            blank.addEventListener('dragover', (e) => e.preventDefault());
+            blank.addEventListener('drop', (e) => {
+              e.preventDefault();
+              const type = e.dataTransfer.getData('type');
+              const dataText = e.dataTransfer.getData('text');
+              const sourceId = e.dataTransfer.getData('sourceId');
+              
+              if (type === blank.dataset.type) {
+                if (blank.classList.contains('filled')) returnWordToBank(blank);
+                fillBlank(blank, dataText, sourceId);
+                markUsed(sourceId);
+              }
+            });
+
+            blank.addEventListener('click', (e) => {
+              e.stopPropagation();
+
+              if (selectedElement) {
+                const selectedType = selectedElement.dataset.type;
+                if (selectedType === blank.dataset.type) {
+                  if (blank.classList.contains('filled')) {
+                    returnWordToBank(blank);
+                  }
+                  fillBlank(blank, selectedElement.textContent, selectedElement.id);
+                  markUsed(selectedElement.id);
+                  clearSelection();
+                }
+              } 
+              else if (blank.classList.contains('filled')) {
+                returnWordToBank(blank);
+              }
+            });
+          });
+
+          list.appendChild(div); 
+        }); 
+        block.appendChild(list); 
+        content.appendChild(block); 
+      } 
+    }
+
+    function createDraggable(text, correctForm, type) {
+      const span = document.createElement('span');
+      span.id = 'word-' + (wordIdCounter++);
+      span.className = 'draggable-word';
+      span.textContent = text;
+      span.draggable = true;
+      span.dataset.type = type;
+      span.dataset.correct = correctForm;
+
+      span.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', text);
+        e.dataTransfer.setData('correct', correctForm);
+        e.dataTransfer.setData('type', type);
+        e.dataTransfer.setData('sourceId', span.id);
+        clearSelection();
+      });
+
+      span.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (span.classList.contains('used')) return;
+        if (span.classList.contains('selected')) {
+          clearSelection();
+        } else {
+          clearSelection();
+          span.classList.add('selected');
+          selectedElement = span;
+          document.body.classList.add('is-selecting');
+        }
+      });
+      return span;
+    }
+
+    function fillBlank(blank, text, sourceId) {
+      blank.textContent = text;
+      blank.classList.add('filled');
+      blank.dataset.sourceId = sourceId;
+      if (blank.dataset.type === 'A') {
+        blank.style.color = 'var(--primary)';
+      } else {
+        blank.style.color = 'var(--secondary)';
+      }
+    }
+
+    function markUsed(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('used');
+    }
+
+    function returnWordToBank(blank) {
+      const sourceId = blank.dataset.sourceId;
+      if (sourceId) {
+        const el = document.getElementById(sourceId);
+        if (el) el.classList.remove('used');
+      }
+      blank.textContent = '';
+      blank.classList.remove('filled');
+      blank.removeAttribute('data-source-id');
+    }
+
+    function clearSelection() {
+      document.querySelectorAll('.draggable-word').forEach(el => el.classList.remove('selected'));
+      document.body.classList.remove('is-selecting');
+      selectedElement = null;
+    }
+
+    function checkAnswers() { 
+      clearSelection();
+      document.querySelectorAll('.blank').forEach(b => { 
+        const user = b.innerText.trim().toLowerCase(); 
+        const correctStr = b.getAttribute('data-ans').toLowerCase(); 
+        const correctOptions = correctStr.split('|');
+
+        if (!user) return;
+
+        if (correctOptions.includes(user)) { 
+          b.style.color = 'var(--success)'; 
+        } else { 
+          b.style.color = 'var(--accent)'; 
+        } 
+      }); 
+    } 
+    window.addEventListener('load', generate); 
+  </script>
+</body>
+</html>

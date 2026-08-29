@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>準2級 Day 56 穴埋め問題</title>
+  <script src="auth.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* =========================================
+       【ブラウザ版】基本設定
+       ========================================= */
+    :root { --primary: #4a90e2; --secondary: #d81b60; --accent: #d0021b; --bg: #f0f4f8; --success: #34c759; --selected: #ffcc00; --target: #dcfce7; }
+    html, body { margin: 0; padding: 0; background: var(--bg); font-family: 'Nunito', 'Kosugi Maru', sans-serif; }
+    
+    .container { width: 210mm; margin: 20px auto; background: white; padding: 10mm 15mm; display: flex; flex-direction: column; box-shadow: 0 0 10px rgba(0,0,0,0.1); box-sizing: border-box; }
+    .header { display: flex; justify-content: flex-end; border-bottom: 2px solid var(--primary); margin-bottom: 15px; }
+    .header h1 { font-size: 18px; color: var(--primary); font-weight: 700; margin: 0; }
+    
+    .instruction { font-size: 13px; font-weight: bold; color: #444; margin: 10px 0 20px 0; padding-left: 10px; border-left: 4px solid var(--primary); }
+    
+    #exercise-content { display: flex; flex-direction: column; gap: 30px; }
+    .question-block { display: flex; flex-direction: column; gap: 10px; }
+    
+    .bank-container { display: flex; gap: 12px; flex-wrap: wrap; }
+    /* ワードバンクA */
+    .word-bank { 
+      font-weight: bold; font-size: 14px; color: var(--primary); 
+      background: #eef6ff; border: 1px solid var(--primary); 
+      padding: 6px 12px; border-radius: 4px; 
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    }
+    /* ワードバンクB */
+    .word-bank-secondary { 
+      font-weight: bold; font-size: 14px; color: var(--secondary); 
+      background: #fce4ec; border: 1px solid var(--secondary); 
+      padding: 6px 12px; border-radius: 4px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    }
+
+    .draggable-word {
+      cursor: pointer; padding: 2px 6px; border-radius: 4px;
+      transition: all 0.2s; border: 1px solid transparent;
+      user-select: none; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .draggable-word:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+    .draggable-word.selected { border: 2px solid #ffcc00; background: #fffbe6; transform: scale(1.05); }
+    .draggable-word.used { opacity: 0.3; text-decoration: line-through; pointer-events: none; background: #eee; box-shadow: none; }
+
+    .sentence-list { display: flex; flex-direction: column; gap: 12px; }
+    .sentence { font-size: 15.5px; line-height: 1.5; color: #333; position: relative; }
+    
+    .blank { 
+      display: inline-block; min-width: 70px; border-bottom: 1.5px solid #333; 
+      text-align: center; font-weight: bold; color: var(--accent); 
+      margin: 0 4px; padding: 2px 4px; cursor: pointer; transition: background 0.2s;
+      vertical-align: bottom; height: 1.4em;
+    }
+    
+    body.is-selecting .blank { background: var(--target); border-bottom: 2px dashed var(--success); animation: pulse 1.5s infinite; }
+    body.is-selecting .blank.filled { background: #fff3cd; border-bottom: 1.5px solid #ffcc00; animation: none; opacity: 1; }
+    
+    .blank.filled[data-type="B"] { color: var(--secondary); }
+    .blank.filled[data-type="A"] { color: var(--primary); }
+
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
+
+    /* プルダウンメニュー用スタイル */
+    .verb-dropdown-menu {
+      position: absolute;
+      background: white;
+      border: 2px solid var(--secondary);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 100px;
+    }
+    .verb-dropdown-menu button {
+      background: white;
+      color: #333;
+      border: none;
+      border-bottom: 1px solid #eee;
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: none;
+      border-radius: 0;
+      font-weight: bold;
+    }
+    .verb-dropdown-menu button:last-child {
+      border-bottom: none;
+    }
+    .verb-dropdown-menu button:hover {
+      background: #fce4ec;
+      color: var(--secondary);
+    }
+    .verb-dropdown-menu button.clear-btn {
+      color: #999;
+      font-size: 12px;
+      background: #f9f9f9;
+    }
+    .verb-dropdown-menu button.clear-btn:hover {
+      background: #fee;
+      color: var(--accent);
+    }
+
+    .controls { position: fixed; top: 15px; left: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
+    button { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+    /* =========================================
+       【PDF印刷用】A4完結
+       ========================================= */
+    @media print {
+      @page { size: A4; margin: 12mm 15mm 15mm 15mm; }
+      body { background: white; -webkit-print-color-adjust: exact; }
+      body.is-selecting .blank { background: none !important; border-bottom: 1.5px solid #000 !important; animation: none !important; }
+      
+      .browser-only { display: none !important; }
+      .verb-dropdown-menu { display: none !important; }
+
+      .controls { display: none !important; }
+      .container { width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; display: block !important; }
+      .header { border-bottom: 1.5px solid #000; margin-bottom: 6mm; }
+      .header h1 { color: #000 !important; font-size: 18px !important; }
+      .instruction { border-left: 3px solid #000 !important; font-size: 12.5px !important; color: #000 !important; margin-bottom: 8mm !important; }
+      #exercise-content { gap: 6mm !important; }
+      .question-block { page-break-inside: avoid; break-inside: avoid; margin-bottom: 2mm !important; }
+      .bank-container { margin-bottom: 3mm !important; }
+      
+      .word-bank, .word-bank-secondary { 
+        background: none !important; border: 1.5px solid #000 !important; 
+        color: #000 !important; font-size: 16px !important; 
+        padding: 2px 8px !important; display: block !important;
+      }
+      .draggable-word {
+        display: inline !important; border: none !important; background: none !important; box-shadow: none !important;
+        padding: 0 !important; color: inherit !important; cursor: default !important; opacity: 1 !important; text-decoration: none !important; pointer-events: none !important;
+      }
+      .draggable-word::after { content: " / "; }
+      .draggable-word:last-child::after { content: ""; }
+
+      .sentence { font-size: 17.5px !important; line-height: 1.6 !important; color: #000 !important; margin-bottom: 1mm !important; }
+      .blank { color: #000 !important; border-color: #000 !important; min-width: 80px !important; background: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="generate()">問題をシャッフル</button>
+    <button onclick="checkAnswers()" style="background: #ff9500;">答え合わせ</button>
+    <button onclick="window.print()" style="background: var(--success);">PDF保存 / 印刷</button>
+  </div>
+  <div class="container">
+    <div class="header"><h1>準2級 Day 56 穴埋め問題</h1></div>
+    <div class="instruction">
+      ★ Fill in the blanks with the correct words. 
+      <span class="browser-only"><br>(Select word → Tap to fill blank)</span>
+    </div>
+    <div id="exercise-content"></div>
+  </div>
+  <script>
+    // Day 56（準2級レベル・フレーズ準拠）16問題
+    // Day 56（英検大問1風：文脈・ヒント情報を補強した16問題）
+  // Day 56（画像の be impressed by に完全対応）
+  const masterData = [ 
+    { ans: ["full", "of"], raw: ["full", "of"], text: "During the annual summer festival, the main street was completely [B] [B] excited local people." }, 
+    { ans: ["made", "from"], raw: ["made", "from"], text: "The teacher explained that daily dairy products like cheese and butter are [B] [B] fresh milk." }, 
+    { ans: ["located", "in"], raw: ["located", "in"], text: "The new public library is conveniently [B] [B] the center of the city, near the main station." }, 
+    { ans: ["absent", "from"], raw: ["absent", "from"], text: "Because a heavy snowstorm hit the area yesterday, many students were [B] [B] school this morning." }, 
+    { ans: ["pleased", "with"], raw: ["pleased", "with"], text: "The English teacher was very [B] [B] her students because everyone passed the difficult examination." }, 
+    { ans: ["responsible", "for"], raw: ["responsible", "for"], text: "As the group leader, Ken is directly [B] [B] organizing the schedule for the school trip." }, 
+    { ans: ["aware", "of"], raw: ["aware", "of"], text: "When driving through a quiet school zone, drivers should always be [B] [B] small children." }, 
+    { ans: ["made", "of"], raw: ["made", "of"], text: "This traditional dining table looks very strong because it is [B] [B] high-quality natural wood." }, 
+    { ans: ["covered", "with"], raw: ["covered", "with"], text: "When we looked out the hotel window in the morning, the garden was totally [B] [B] deep white snow." }, 
+    { ans: ["satisfied", "with"], raw: ["satisfied", "with"], text: "The hotel guests were extremely [B] [B] the friendly staff and the clean rooms during their stay." }, 
+    { ans: ["impressed", "by|with"], raw: ["impressed", "by"], text: "The judges were deeply [B] [B] the young musician's wonderful piano performance." }, 
+    { ans: ["known", "as"], raw: ["known", "as"], text: "Because of its ancient buildings and rich history, Kyoto is widely [B] [B] a cultural symbol of Japan." }, 
+    { ans: ["involved", "in"], raw: ["involved", "in"], text: "A lot of high school volunteers are actively [B] [B] the local park cleanup project this weekend." }, 
+    { ans: ["finished", "with"], raw: ["finished", "with"], text: "When you are completely [B] [B] reading the newspaper, please pass it to your grandfather." }, 
+    { ans: ["busy", "with"], raw: ["busy", "with"], text: "My parents are always [B] [B] doing various household chores on Sunday mornings." }, 
+    { ans: ["filled", "with"], raw: ["filled", "with"], text: "On his birthday, the boy opened a large box that was [B] [B] colorful toys and nice gifts." } 
+  ];
+
+    let selectedElement = null;
+    let wordIdCounter = 0;
+
+    function closeAllDropdowns() {
+      document.querySelectorAll('.verb-dropdown-menu').forEach(menu => menu.remove());
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.verb-dropdown-menu') && !e.target.classList.contains('blank') && !e.target.classList.contains('draggable-word')) {
+        closeAllDropdowns();
+      }
+    });
+
+    function generate() { 
+      closeAllDropdowns();
+      const content = document.getElementById('exercise-content'); 
+      content.innerHTML = ''; 
+      wordIdCounter = 0;
+      let shuffled = [...masterData].sort(() => Math.random() - 0.5); 
+      
+      clearSelection();
+
+      for (let i = 0; i < 4; i++) { 
+        const block = document.createElement('div'); 
+        block.className = 'question-block'; 
+        const currentFour = shuffled.slice(i * 4, (i + 1) * 4); 
+        
+        // --- Bank A ---
+        const bankAItems = currentFour.map(item => ({ raw: item.raw[0], correct: item.ans[0] })).sort(() => Math.random() - 0.5);
+        const divA = document.createElement('div'); 
+        divA.className = 'word-bank'; 
+        const prefixA = document.createElement('span');
+        prefixA.textContent = (i + 1) + '-A) ';
+        divA.appendChild(prefixA);
+        
+        bankAItems.forEach(obj => {
+          const span = createDraggable(obj.raw, obj.correct, 'A');
+          divA.appendChild(span);
+        });
+
+        // --- Bank B ---
+        const bankBItems = currentFour.map(item => ({ raw: item.raw[1], correct: item.ans[1] })).sort(() => Math.random() - 0.5);
+        const divB = document.createElement('div'); 
+        divB.className = 'word-bank-secondary'; 
+        const prefixB = document.createElement('span');
+        prefixB.textContent = (i + 1) + '-B) ';
+        divB.appendChild(prefixB);
+
+        bankBItems.forEach(obj => {
+          const span = createDraggable(obj.raw, obj.raw, 'B');
+          divB.appendChild(span);
+        });
+
+        const bankContainer = document.createElement('div'); 
+        bankContainer.className = 'bank-container'; 
+        bankContainer.appendChild(divA); 
+        bankContainer.appendChild(divB); 
+        block.appendChild(bankContainer); 
+
+        // --- Sentence List ---
+        const list = document.createElement('div'); 
+        list.className = 'sentence-list'; 
+        
+        currentFour.forEach(item => { 
+          const div = document.createElement('div'); 
+          div.className = 'sentence'; 
+          
+          let htmlText = item.text;
+          htmlText = htmlText.replace('[B]', `<span class='blank blank-a' data-type='A' data-ans='${item.ans[0]}'></span>`);
+          htmlText = htmlText.replace('[B]', `<span class='blank blank-b' data-type='B' data-ans='${item.ans[1]}'></span>`);
+          
+          div.innerHTML = htmlText; 
+          
+          div.querySelectorAll('.blank').forEach(blank => {
+            blank.addEventListener('dragover', (e) => e.preventDefault());
+            blank.addEventListener('drop', (e) => {
+              e.preventDefault();
+              closeAllDropdowns();
+              const type = e.dataTransfer.getData('type');
+              const dataText = e.dataTransfer.getData('text');
+              const sourceId = e.dataTransfer.getData('sourceId');
+              
+              if (type === blank.dataset.type) {
+                if (blank.classList.contains('filled')) returnWordToBank(blank);
+                fillBlank(blank, dataText, sourceId);
+                markUsed(sourceId);
+              }
+            });
+
+            blank.addEventListener('click', (e) => {
+              e.stopPropagation();
+              closeAllDropdowns();
+
+              if (selectedElement) {
+                const selectedType = selectedElement.dataset.type;
+                if (selectedType === blank.dataset.type) {
+                  if (blank.classList.contains('filled')) {
+                    returnWordToBank(blank);
+                  }
+                  fillBlank(blank, selectedElement.textContent, selectedElement.id);
+                  markUsed(selectedElement.id);
+                  clearSelection();
+                }
+              } 
+              else if (blank.classList.contains('filled')) {
+                returnWordToBank(blank);
+              }
+            });
+          });
+
+          list.appendChild(div); 
+        }); 
+        block.appendChild(list); 
+        content.appendChild(block); 
+      } 
+    }
+
+    function createDraggable(text, correctForm, type) {
+      const span = document.createElement('span');
+      span.id = 'word-' + (wordIdCounter++);
+      span.className = 'draggable-word';
+      span.textContent = text;
+      span.draggable = true;
+      span.dataset.type = type;
+      span.dataset.correct = correctForm;
+
+      span.addEventListener('dragstart', (e) => {
+        closeAllDropdowns();
+        e.dataTransfer.setData('text/plain', text);
+        e.dataTransfer.setData('correct', correctForm);
+        e.dataTransfer.setData('type', type);
+        e.dataTransfer.setData('sourceId', span.id);
+        clearSelection();
+      });
+
+      span.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeAllDropdowns();
+        if (span.classList.contains('used')) return;
+        if (span.classList.contains('selected')) {
+          clearSelection();
+        } else {
+          clearSelection();
+          span.classList.add('selected');
+          selectedElement = span;
+          document.body.classList.add('is-selecting');
+        }
+      });
+      return span;
+    }
+
+    function fillBlank(blank, text, sourceId) {
+      blank.textContent = text;
+      blank.classList.add('filled');
+      blank.dataset.sourceId = sourceId;
+      if (blank.dataset.type === 'A') {
+        blank.style.color = 'var(--primary)';
+      } else {
+        blank.style.color = 'var(--secondary)';
+      }
+    }
+
+    function markUsed(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('used');
+    }
+
+    function returnWordToBank(blank) {
+      const sourceId = blank.dataset.sourceId;
+      if (sourceId) {
+        const el = document.getElementById(sourceId);
+        if (el) el.classList.remove('used');
+      }
+      blank.textContent = '';
+      blank.classList.remove('filled');
+      blank.removeAttribute('data-source-id');
+    }
+
+    function clearSelection() {
+      document.querySelectorAll('.draggable-word').forEach(el => el.classList.remove('selected'));
+      document.body.classList.remove('is-selecting');
+      selectedElement = null;
+    }
+
+    function checkAnswers() { 
+      closeAllDropdowns();
+      clearSelection();
+      document.querySelectorAll('.blank').forEach(b => { 
+        const user = b.innerText.trim().toLowerCase(); 
+        const correctStr = b.getAttribute('data-ans').toLowerCase(); 
+        const correctOptions = correctStr.split('|');
+
+        if (!user) return;
+
+        if (correctOptions.includes(user)) { 
+          b.style.color = 'var(--success)'; 
+        } else { 
+          b.style.color = 'var(--accent)'; 
+        } 
+      }); 
+    } 
+    window.addEventListener('load', generate); 
+  </script>
+</body>
+</html>
