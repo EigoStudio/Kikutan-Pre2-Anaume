@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>キクタン準2級 Day 69 穴埋め問題</title>
+  <script src="auth.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* =========================================
+       【ブラウザ版】白背景・青系（Pre2仕様）
+       ========================================= */
+    :root { 
+      --primary: #4a90e2; 
+      --primary-dark: #2d68ab;
+      --bg: #f0f4f8; 
+      --card-bg: #ffffff;
+      --text: #333333;
+      --accent: #d0021b; 
+      --success: #34c759; 
+      --selected: #ffcc00; 
+      --target: #dcfce7; 
+    }
+    
+    html, body { 
+      margin: 0; padding: 0; 
+      background: var(--bg); 
+      color: var(--text); 
+      font-family: 'Nunito', 'Kosugi Maru', sans-serif; 
+    }
+    
+    .container { 
+      width: 210mm; margin: 20px auto; 
+      background: var(--card-bg); 
+      padding: 10mm 15mm; 
+      display: flex; flex-direction: column; 
+      box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+      box-sizing: border-box; 
+      border-radius: 4px;
+    }
+    
+    .header { 
+      display: flex; justify-content: space-between; align-items: center; 
+      border-bottom: 2px solid var(--primary); 
+      margin-bottom: 15px; padding-bottom: 5px; 
+    }
+    .header h1 { 
+      font-size: 18px; color: var(--primary); font-weight: 700; margin: 0; 
+    }
+    .level-badge { 
+      font-size: 13px; background: var(--primary); color: white; 
+      padding: 3px 12px; border-radius: 12px; font-weight: bold; 
+    }
+    
+    .instruction { 
+      font-size: 13px; font-weight: bold; color: #444; 
+      margin: 10px 0 15px 0; padding-left: 10px; border-left: 4px solid var(--primary); 
+      line-height: 1.5;
+    }
+    
+    #exercise-content { display: flex; flex-direction: column; gap: 24px; }
+    
+    .question-block { 
+      display: flex; flex-direction: column; gap: 10px; 
+    }
+    
+    .word-bank { 
+      font-weight: bold; font-size: 14px; color: var(--primary); 
+      background: #eef6ff; border: 1px solid var(--primary); 
+      padding: 8px 12px; border-radius: 4px; 
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    }
+    
+    .draggable-word {
+      cursor: pointer; padding: 3px 8px; border-radius: 4px;
+      transition: all 0.2s; border: 1px solid transparent;
+      user-select: none; background: white; color: var(--primary);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-weight: bold;
+    }
+    .draggable-word:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+    .draggable-word.selected { 
+      border: 2px solid var(--selected); background: #fffbe6; 
+      transform: scale(1.05); color: #333;
+    }
+    .draggable-word.used { 
+      opacity: 0.3; text-decoration: line-through; pointer-events: none; 
+      background: #eee; box-shadow: none; color: #888;
+    }
+    
+    .sentence-list { display: flex; flex-direction: column; gap: 12px; }
+    .sentence { font-size: 15.5px; line-height: 1.5; color: #333; position: relative; }
+    
+    .blank { 
+      display: inline-block; min-width: 75px; 
+      border-bottom: 1.5px solid #333; 
+      text-align: center; font-weight: bold; color: var(--primary); 
+      margin: 0 4px; padding: 2px 4px; cursor: pointer; transition: background 0.2s;
+      vertical-align: bottom; height: 1.4em;
+    }
+    
+    body.is-selecting .blank { 
+      background: var(--target); 
+      border-bottom: 2px dashed var(--success); 
+      animation: pulse 1.5s infinite; 
+    }
+    body.is-selecting .blank.filled { 
+      background: #fff3cd; 
+      border-bottom: 1.5px solid var(--selected); 
+      animation: none; 
+    }
+    
+    .blank.filled { color: var(--primary); }
+
+    @keyframes pulse { 
+      0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.4); } 
+      70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 
+      100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } 
+    }
+
+    .controls { 
+      position: fixed; top: 15px; left: 15px; 
+      display: flex; flex-direction: column; gap: 10px; z-index: 100; 
+    }
+    button { 
+      padding: 8px 15px; border: none; border-radius: 6px; 
+      cursor: pointer; font-weight: bold; font-family: inherit;
+      background: var(--primary); color: white; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    .level-btn { background: #777; }
+    .level-btn.active-btn { background: var(--primary-dark) !important; }
+
+    /* =========================================
+       【PDF印刷用】A4完結
+       ========================================= */
+    @media print {
+      @page { size: A4; margin: 12mm 15mm 15mm 15mm; }
+      body { background: white !important; color: black !important; -webkit-print-color-adjust: exact; }
+      .controls, .browser-only, .level-badge { display: none !important; }
+      .container { width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; display: block !important; }
+      
+      .header { border-bottom: 1.5px solid #000; margin-bottom: 6mm; }
+      .header h1 { color: #000 !important; font-size: 18px !important; }
+      .instruction { border-left: 3px solid #000 !important; font-size: 12.5px !important; color: #000 !important; margin-bottom: 8mm !important; }
+      
+      #exercise-content { gap: 6mm !important; }
+      .question-block { page-break-inside: avoid; break-inside: avoid; margin-bottom: 2mm !important; }
+      
+      .word-bank { 
+        background: none !important; border: 1.5px solid #000 !important; 
+        color: #000 !important; font-size: 15.5px !important; 
+        padding: 2px 8px !important; display: block !important; margin-bottom: 3mm !important;
+      }
+      .draggable-word {
+        display: inline !important; border: none !important; background: none !important; box-shadow: none !important;
+        padding: 0 !important; color: inherit !important; cursor: default !important; opacity: 1 !important; text-decoration: none !important; pointer-events: none !important;
+        font-size: 15.5px !important;
+      }
+      .draggable-word::after { content: " / "; }
+      .draggable-word:last-child::after { content: ""; }
+
+      .sentence { font-size: 16.5px !important; line-height: 1.55 !important; color: #000 !important; margin-bottom: 1mm !important; }
+      .blank { color: #000 !important; border-color: #000 !important; min-width: 75px !important; background: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="controls">
+  <button id="btn-lv1" class="level-btn active-btn" onclick="changeLevel(1)">Level 1 (4問×4群)</button>
+  <button id="btn-lv2" class="level-btn" onclick="changeLevel(2)">Level 2 (8問×2群)</button>
+  <button onclick="generate()" style="background: #28a745;">問題をシャッフル</button>
+  <button onclick="checkAnswers()" style="background: #ff9500;">答え合わせ</button>
+  <button onclick="window.print()" style="background: #17a2b8;">PDF保存 / 印刷</button>
+</div>
+
+<div class="container">
+  <div class="header">
+    <h1>準2級 Day 69 穴埋め問題</h1>
+    <span id="level-display" class="level-badge">Level 1</span>
+  </div>
+  <div class="instruction">
+    ★ Fill in the blanks with the correct words from the bank.
+    <span class="browser-only"><br>(Select word → Tap to fill blank. Tap a filled blank to reset.)</span>
+  </div>
+  <div id="exercise-content"></div>
+</div>
+
+<script>
+// Day 69 全16表現（キーとなる1語/句のみを選択させ、前置詞・接続詞はあらかじめ文中に配置）
+const masterData = [
+  // 数量表現（8問）
+  { ans: "number", text: "A [B] of students volunteered to clean the local park." },
+  { ans: "plenty", text: "Don't rush; we still have [B] of time before the train leaves." },
+  { ans: "variety", text: "The department store offers a wide [B] of imported goods." },
+  { ans: "few", text: "Only a [B] people were able to solve the difficult puzzle." },
+  { ans: "couple", text: "We decided to stay in Kyoto for a [B] of weeks." },
+  { ans: "thousands", text: "[B] of fans cheered loudly when the band appeared on stage." },
+  { ans: "millions", text: "There are [B] of stars shining brightly in the night sky." },
+  { ans: "hundreds", text: "[B] of wild birds gathered near the riverbank this morning." },
+  
+  // 相関接続詞・比較構文（8問）
+  { ans: "such", text: "She loves green vegetables [B] as spinach and broccoli." },
+  { ans: "not only", text: "The movie was [B] exciting but also very touching." },
+  { ans: "either", text: "You can pay [B] in cash or by credit card at the register." },
+  { ans: "both", text: "She is [B] smart and very kind to everyone around her." },
+  { ans: "neither", text: "He has [B] a car nor a bicycle to commute to school." },
+  { ans: "same", text: "Ken has the [B] opinion as his teacher on this environmental topic." },
+  { ans: "whether", text: "I don't know [B] it will rain tomorrow or not." },
+  { ans: "not so much", text: "He is [B] a scholar as an active journalist." }
+];
+
+let currentLevel = 1;
+let selectedElement = null;
+let wordIdCounter = 0;
+
+function changeLevel(lv) {
+  currentLevel = lv;
+  document.getElementById('btn-lv1').classList.toggle('active-btn', lv === 1);
+  document.getElementById('btn-lv2').classList.toggle('active-btn', lv === 2);
+  document.getElementById('level-display').textContent = `Level ${lv}`;
+  generate();
+}
+
+function generate() {
+  const content = document.getElementById('exercise-content');
+  content.innerHTML = '';
+  wordIdCounter = 0;
+  clearSelection();
+
+  let shuffled = [...masterData].sort(() => Math.random() - 0.5);
+  const chunkSize = (currentLevel === 1) ? 4 : 8;
+  const numBlocks = 16 / chunkSize;
+
+  for (let i = 0; i < numBlocks; i++) {
+    const block = document.createElement('div');
+    block.className = 'question-block';
+    const currentItems = shuffled.slice(i * chunkSize, (i + 1) * chunkSize);
+    
+    // 選択肢チップのシャッフル
+    const blockWords = currentItems.map(item => item.ans).sort(() => Math.random() - 0.5);
+    
+    const wordBank = document.createElement('div');
+    wordBank.className = 'word-bank';
+    const prefix = document.createElement('span');
+    prefix.className = 'browser-only';
+    prefix.style.fontWeight = 'bold';
+    prefix.textContent = `Group ${i + 1}: `;
+    wordBank.appendChild(prefix);
+
+    blockWords.forEach((word) => {
+      const span = document.createElement('span');
+      span.id = 'word-' + (wordIdCounter++);
+      span.className = 'draggable-word';
+      span.textContent = word;
+      span.setAttribute('data-word', word);
+      span.draggable = true;
+
+      // ドラッグ操作
+      span.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', word);
+        e.dataTransfer.setData('sourceId', span.id);
+        clearSelection();
+      });
+      
+      // クリック操作
+      span.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (span.classList.contains('used')) return;
+        if (span.classList.contains('selected')) { 
+          clearSelection(); 
+        } else {
+          clearSelection();
+          span.classList.add('selected');
+          selectedElement = span;
+          document.body.classList.add('is-selecting');
+        }
+      });
+      wordBank.appendChild(span);
+    });
+    block.appendChild(wordBank);
+
+    // 英文リスト
+    const sList = document.createElement('div');
+    sList.className = 'sentence-list';
+    
+    // 英文順もシャッフルして表示
+    const displayItems = [...currentItems].sort(() => Math.random() - 0.5);
+    displayItems.forEach(item => {
+      const p = document.createElement('div');
+      p.className = 'sentence';
+      let html = item.text.replace('[B]', `<span class="blank" data-ans="${item.ans}"></span>`);
+      p.innerHTML = html;
+      
+      p.querySelectorAll('.blank').forEach(blank => {
+        // ドロップ操作
+        blank.addEventListener('dragover', (e) => e.preventDefault());
+        blank.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const sourceId = e.dataTransfer.getData('sourceId');
+          const sourceEl = document.getElementById(sourceId);
+          if (sourceEl) {
+            if (blank.classList.contains('filled')) returnWordToBank(blank);
+            fillWord(blank, sourceEl.getAttribute('data-word'), sourceId);
+            sourceEl.classList.add('used');
+          }
+        });
+
+        // クリック操作
+        blank.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (selectedElement) {
+            if (blank.classList.contains('filled')) returnWordToBank(blank);
+            fillWord(blank, selectedElement.getAttribute('data-word'), selectedElement.id);
+            selectedElement.classList.add('used');
+            clearSelection();
+          } else if (blank.classList.contains('filled')) {
+            returnWordToBank(blank);
+          }
+        });
+      });
+      sList.appendChild(p);
+    });
+    block.appendChild(sList);
+    content.appendChild(block);
+  }
+}
+
+function fillWord(targetBlank, wordText, sourceId) {
+  targetBlank.textContent = wordText;
+  targetBlank.classList.add('filled');
+  targetBlank.dataset.sourceId = sourceId;
+}
+
+function returnWordToBank(targetBlank) {
+  const sourceId = targetBlank.dataset.sourceId;
+  if (sourceId) {
+    const sourceEl = document.getElementById(sourceId);
+    if (sourceEl) sourceEl.classList.remove('used');
+  }
+  targetBlank.textContent = '';
+  targetBlank.classList.remove('filled');
+  targetBlank.removeAttribute('data-source-id');
+}
+
+function clearSelection() {
+  document.querySelectorAll('.draggable-word').forEach(el => el.classList.remove('selected'));
+  document.body.classList.remove('is-selecting');
+  selectedElement = null;
+}
+
+function checkAnswers() {
+  clearSelection();
+  document.querySelectorAll('.blank').forEach(b => {
+    const user = b.innerText.trim().toLowerCase();
+    const correct = b.getAttribute('data-ans').toLowerCase();
+    if (!user) return;
+    const isCorrect = (user === correct);
+    b.style.color = isCorrect ? 'var(--success)' : 'var(--accent)';
+  });
+}
+
+window.addEventListener('load', generate);
+</script>
+</body>
+</html>
